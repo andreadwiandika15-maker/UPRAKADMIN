@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0929d8">
+<title>Admin Survei — SMAN 1 Sumberrejo</title>
+<style>
+:root{--blue:#102bdc;--yellow:#ffe51e;--orange:#f47716;--ink:#151515;--muted:#66708a;--line:#e7eaf2}
+*{box-sizing:border-box}body{margin:0;background:#f1f3fa;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}header{background:linear-gradient(120deg,#06158e,#1739ec);color:white;padding:22px 18px;border-bottom:5px solid var(--yellow)}.head{max-width:1150px;margin:auto;display:flex;align-items:center;gap:15px}.head img{width:65px;height:65px;background:white;border-radius:50%;padding:3px}.head h1{font-size:clamp(20px,3vw,28px);margin:0 0 5px}.head p{margin:0;color:#e4e9ff}.wrap{max-width:1150px;margin:25px auto;padding:0 16px}.card{background:white;border:1px solid #e1e5f0;border-radius:15px;padding:20px;box-shadow:0 5px 20px #1a28600b;margin-bottom:18px}.login{max-width:440px;margin:55px auto}.login h2{margin-top:0}.field label{display:block;font-weight:700;margin-bottom:7px}.field input{width:100%;padding:13px;border:1.5px solid #d7dceb;border-radius:9px;font-size:16px;margin-bottom:12px}.btn{border:0;border-radius:9px;padding:12px 17px;font-weight:800;cursor:pointer;background:var(--blue);color:white}.btn.alt{background:var(--yellow);color:#111}.btn.danger{background:#b52c2c}.btn:disabled{opacity:.6}.muted{color:var(--muted);font-size:13px;line-height:1.5}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{background:#f4f6ff;border:1px solid #e0e5ff;border-radius:12px;padding:17px}.stat small{color:var(--muted);font-weight:700}.stat strong{display:block;font-size:32px;color:var(--blue);margin-top:5px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}.toolbar input,.toolbar select{padding:11px;border:1px solid #d8deed;border-radius:9px;font-size:14px}.toolbar .left{display:flex;gap:9px;flex-wrap:wrap}.table-wrap{overflow:auto;margin-top:15px}table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f4f6ff;position:sticky;top:0}tr:hover td{background:#fafbff}.tag{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef0ff;color:#1428ad;font-weight:700}.status{margin-top:10px;font-size:13px;color:var(--muted)}.hidden{display:none!important}.error{color:#b42318}.empty{text-align:center;color:var(--muted);padding:35px}.answer-cell{max-width:230px;white-space:normal}.delete-btn{background:#b42318;color:#fff;border:0;border-radius:7px;padding:8px 10px;font-weight:800;cursor:pointer}.delete-btn:hover{background:#8f1d14}
+@media(max-width:650px){.stats{grid-template-columns:1fr}.head img{width:52px;height:52px}.toolbar{align-items:stretch}.toolbar .left{width:100%}.toolbar input{flex:1;min-width:150px}}
+</style>
+</head>
+<body>
+<header><div class="head"><img src="logo-sekolah.jpeg" alt="Logo sekolah"><div><h1>Dashboard Admin Survei</h1><p>Survei Kondisi Belajar · SMA Negeri 1 Sumberrejo</p></div></div></header>
+<main class="wrap">
+  <section class="card" style="margin-bottom:18px">
+    <strong>Dashboard Admin — akses langsung</strong>
+    <p class="muted" style="margin-bottom:0">Halaman ini tidak meminta login. Data akan dimuat otomatis dari Firebase Realtime Database.</p>
+  </section>
+  <section id="dashboard" class="hidden">
+    <div class="stats">
+      <div class="stat"><small>TOTAL JAWABAN MASUK</small><strong id="total">0</strong></div>
+      <div class="stat"><small>JUMLAH KELAS TERISI</small><strong id="classes">0</strong></div>
+      <div class="stat"><small>STATUS DATA</small><strong style="font-size:20px">Live</strong><span class="muted">Diperbarui otomatis</span></div>
+    </div>
+    <section class="card" style="margin-top:18px">
+      <div class="toolbar"><div><h2 style="margin:0 0 5px">Data Responden</h2><div class="muted">Data baru akan tampil otomatis saat siswa menekan tombol kirim.</div></div><div class="left"><input id="search" type="search" placeholder="Cari nama..."><select id="filterClass"><option value="">Semua kelas</option><option>XI 1</option><option>XI 2</option><option>XI 3</option><option>XI 4</option><option>XI 5</option><option>XI 6</option><option>XI 7</option><option>XI 8</option><option>XI 9</option></select><button class="btn alt" id="exportBtn">Unduh CSV</button></div></div>
+      <div class="status" id="liveStatus">Menghubungkan ke database...</div>
+      <div class="table-wrap"><table><thead><tr><th>No.</th><th>Nama</th><th>Kelas</th><th>Waktu kirim</th><th>1. Suasana</th><th>2. Musik?</th><th>3. Jenis musik</th><th>4. Musik & konsentrasi</th><th>5. Memahami materi</th><th>6. Pengaruh suara</th><th>7. Konsentrasi di tempat ramai</th><th>8. Konsentrasi di tempat sepi</th><th>9. Pilihan belajar</th><th>10. Tingkat suara ideal</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="14" class="empty">Belum ada data.</td></tr></tbody></table></div>
+    </section>
+  </section>
+</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {getDatabase,ref,onValue,remove} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+const firebaseConfig={apiKey:"AIzaSyASzJSNZTIekHxXL9TnF_f-GZAjB2G09KA",authDomain:"uprak-fisika.firebaseapp.com",databaseURL:"https://uprak-fisika-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"uprak-fisika",storageBucket:"uprak-fisika.firebasestorage.app",messagingSenderId:"706403440787",appId:"1:706403440787:web:6bce5a83c208b03700d566"};
+const app=initializeApp(firebaseConfig),db=getDatabase(app);
+const $=id=>document.getElementById(id);let allRows=[];
+const labels=["Suasana belajar","Kebiasaan musik","Jenis musik","Musik membantu konsentrasi","Memahami materi","Pengaruh suara sekitar","Konsentrasi di tempat ramai","Konsentrasi di tempat sepi","Pilihan belajar satu jam","Tingkat suara ideal"];
+function answer(r,i){return r?.jawaban?.["pertanyaan"+(i+1)]?.jawaban||"—"}
+function render(){
+ const term=$("search").value.toLowerCase(),cls=$("filterClass").value;
+ const filtered=allRows.filter(r=>(r.nama||"").toLowerCase().includes(term)&&(!cls||r.kelas===cls));
+ $("total").textContent=allRows.length;$("classes").textContent=new Set(allRows.map(r=>r.kelas).filter(Boolean)).size;
+ const body=$("rows");body.replaceChildren();
+ if(!filtered.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=15;td.className="empty";td.textContent=allRows.length?"Tidak ada data yang cocok dengan pencarian.":"Belum ada jawaban masuk.";tr.append(td);body.append(tr);return;}
+ filtered.forEach((r,i)=>{
+  const tr=document.createElement("tr");
+  const vals=[i+1,r.nama||"—",r.kelas||"—",r.dikirimPada?new Date(r.dikirimPada).toLocaleString("id-ID"):"—",...labels.map((_,j)=>answer(r,j))];
+  vals.forEach((v,j)=>{const td=document.createElement("td");td.textContent=v;if(j===1)td.style.fontWeight="700";tr.append(td)});
+  const actionCell=document.createElement("td");
+  const deleteButton=document.createElement("button");
+  deleteButton.className="delete-btn";deleteButton.type="button";deleteButton.textContent="Hapus";
+  deleteButton.addEventListener("click",async()=>{
+   const confirmed=window.confirm("Hapus jawaban dari "+(r.nama||"siswa ini")+"? Data yang dihapus tidak dapat dikembalikan.");
+   if(!confirmed)return;
+   deleteButton.disabled=true;deleteButton.textContent="Menghapus...";
+   try{await remove(ref(db,"responses/"+r.id));}
+   catch(err){console.error(err);window.alert("Gagal menghapus data. Periksa aturan Firebase Realtime Database.");deleteButton.disabled=false;deleteButton.textContent="Hapus";}
+  });
+  actionCell.append(deleteButton);tr.append(actionCell);body.append(tr);
+ });
+}
+$("dashboard").classList.remove("hidden");
+onValue(ref(db,"responses"),snap=>{
+ const data=snap.val()||{};
+ allRows=Object.entries(data).map(([id,r])=>({id,...r})).sort((a,b)=>(b.dikirimPada||0)-(a.dikirimPada||0));
+ render();
+ $("liveStatus").textContent="Terhubung · "+allRows.length+" jawaban tersimpan · pembaruan realtime aktif";
+},err=>{
+ $("liveStatus").textContent="Gagal membaca database: "+err.message+" — pastikan aturan .read di Firebase sudah diatur sesuai panduan.";
+});
+$("search").addEventListener("input",render);$("filterClass").addEventListener("change",render);
+$("exportBtn").addEventListener("click",()=>{
+ const header=["Nama","Kelas","Waktu kirim",...labels],escape=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+ const lines=[header,...allRows.map(r=>[r.nama,r.kelas,r.dikirimPada?new Date(r.dikirimPada).toLocaleString("id-ID"):"",...labels.map((_,i)=>answer(r,i))])].map(row=>row.map(escape).join(","));
+ const blob=new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="hasil-survei-kondisi-belajar.csv";a.click();URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
